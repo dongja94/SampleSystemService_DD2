@@ -1,16 +1,24 @@
 package com.begentgroup.samplesystemservice;
 
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.app.NotificationCompat;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -18,6 +26,8 @@ public class MainActivity extends AppCompatActivity {
     Sensor mRotationVector;
     Sensor mLinearAcc;
 
+
+    NotificationManager mNM;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -25,6 +35,47 @@ public class MainActivity extends AppCompatActivity {
         mSM = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
         mRotationVector = mSM.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
         mLinearAcc = mSM.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
+
+        mNM = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+
+        Button btn = (Button)findViewById(R.id.btn_send);
+        btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                sendNotification();
+            }
+        });
+    }
+
+    private int id = 0;
+    int messageCount = 0;
+    private void sendNotification() {
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
+        builder.setSmallIcon(android.R.drawable.ic_dialog_info);
+        builder.setTicker("sample notification");
+        builder.setContentTitle("notification title" + messageCount);
+        builder.setContentText("notification test..." + messageCount);
+        builder.setWhen(System.currentTimeMillis());
+
+        Intent intent = new Intent(this, NotifyActivity.class);
+        intent.setData(Uri.parse("myscheme://" + getPackageName() + "/" + id));
+        intent.putExtra("count", messageCount);
+        intent.putExtra("id", id);
+        PendingIntent pi = PendingIntent.getActivity(this, 0, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT);
+        builder.setContentIntent(pi);
+        builder.setDefaults(NotificationCompat.DEFAULT_ALL);
+        builder.setAutoCancel(true);
+
+        Intent cancelIntent= new Intent(this, CancelService.class);
+        PendingIntent cancelpi = PendingIntent.getService(this, 0, cancelIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        builder.setDeleteIntent(cancelpi);
+
+        Notification notification = builder.build();
+
+        mNM.notify(id, notification);
+        id++;
+        messageCount++;
     }
 
     @Override

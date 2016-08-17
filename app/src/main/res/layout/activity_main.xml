@@ -9,8 +9,13 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="com.begentgroup.samplesystemservice.MainActivity">
 
-    <TextView
+    <Button
+        style="?android:attr/buttonStyleSmall"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Hello World!" />
+        android:text="send notification"
+        android:id="@+id/btn_send"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
 </RelativeLayout>

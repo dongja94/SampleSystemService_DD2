@@ -45,7 +45,72 @@ public class MainActivity extends AppCompatActivity {
                 sendNotification();
             }
         });
+
+        btn = (Button)findViewById(R.id.btn_progress);
+        btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                progress = 0;
+                mHandler.post(progressRunnable);
+            }
+        });
+
+        btn = (Button)findViewById(R.id.btn_style);
+        btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                sendStyle();
+            }
+        });
     }
+
+    private void sendStyle() {
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
+        builder.setSmallIcon(android.R.drawable.ic_dialog_email);
+        builder.setTicker("download");
+        NotificationCompat.BigTextStyle style = new NotificationCompat.BigTextStyle();
+        style.bigText("An intent to launch instead of posting the notification to the status bar. Only for use with extremely high-priority notifications demanding the user's immediate attention, such as an incoming phone call or alarm clock that the user has explicitly set to a particular time. If this facility is used for something else, please give the user an option to turn it off and use a normal notification, as this can be extremely disruptive.\n" +
+                "\n" +
+                "The system UI may choose to display a heads-up notification, instead of launching this intent, while the user is using the device.");
+        builder.setContentTitle("big text");
+        builder.setStyle(style);
+
+        Intent preIntent = new Intent(this, CancelService.class);
+        PendingIntent pi = PendingIntent.getService(this, 0, preIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        builder.addAction(android.R.drawable.ic_dialog_alert, "PREV", pi);
+
+        mNM.notify(id, builder.build());
+    }
+
+    private void sendProgress(int progress) {
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
+        builder.setSmallIcon(android.R.drawable.ic_dialog_email);
+        builder.setTicker("download");
+        builder.setContentTitle("file download : " + progress);
+        builder.setProgress(100, progress, false);
+
+        builder.setDefaults(NotificationCompat.DEFAULT_ALL);
+        builder.setOngoing(true);
+        builder.setOnlyAlertOnce(true);
+
+        mNM.notify(PROGRESS_ID, builder.build());
+    }
+
+    private static final int PROGRESS_ID = 100;
+
+    int progress = 0;
+    Runnable progressRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (progress <= 100) {
+                sendProgress(progress);
+                progress += 10;
+                mHandler.postDelayed(this, 500);
+            } else {
+                mNM.cancel(PROGRESS_ID);
+            }
+        }
+    };
 
     private int id = 0;
     int messageCount = 0;
@@ -57,24 +122,32 @@ public class MainActivity extends AppCompatActivity {
         builder.setContentText("notification test..." + messageCount);
         builder.setWhen(System.currentTimeMillis());
 
+        Intent[] intents = new Intent[2];
+        intents[0] = new Intent(this, MainActivity.class);
+        intents[0].addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
         Intent intent = new Intent(this, NotifyActivity.class);
         intent.setData(Uri.parse("myscheme://" + getPackageName() + "/" + id));
         intent.putExtra("count", messageCount);
         intent.putExtra("id", id);
-        PendingIntent pi = PendingIntent.getActivity(this, 0, intent,
+        intents[1] = intent;
+        PendingIntent pi = PendingIntent.getActivities(this, 0, intents,
                 PendingIntent.FLAG_UPDATE_CURRENT);
         builder.setContentIntent(pi);
         builder.setDefaults(NotificationCompat.DEFAULT_ALL);
         builder.setAutoCancel(true);
 
         Intent cancelIntent= new Intent(this, CancelService.class);
+        cancelIntent.putExtra("count", messageCount);
         PendingIntent cancelpi = PendingIntent.getService(this, 0, cancelIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         builder.setDeleteIntent(cancelpi);
+
+        Intent fullIntent= new Intent(this, NotifyActivity.class);
+        PendingIntent fpi = PendingIntent.getActivity(this, 0, fullIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        builder.setFullScreenIntent(fpi, true);
 
         Notification notification = builder.build();
 
         mNM.notify(id, notification);
-        id++;
         messageCount++;
     }
 

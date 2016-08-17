@@ -1,5 +1,6 @@
 package com.begentgroup.samplesystemservice;
 
+import android.app.AlarmManager;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -19,6 +20,8 @@ import android.support.v7.app.NotificationCompat;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.EditText;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -28,6 +31,10 @@ public class MainActivity extends AppCompatActivity {
 
 
     NotificationManager mNM;
+
+    AlarmManager mAM;
+    EditText messageView, timeView, intervalView;
+    CheckBox repeatView;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -62,7 +69,29 @@ public class MainActivity extends AppCompatActivity {
                 sendStyle();
             }
         });
+
+        mAM = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
+        messageView = (EditText)findViewById(R.id.edit_message);
+        timeView = (EditText)findViewById(R.id.edit_time);
+        intervalView = (EditText)findViewById(R.id.edit_interval);
+        repeatView = (CheckBox)findViewById(R.id.check_repeat);
+        btn = (Button)findViewById(R.id.btn_add);
+        btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                MyData d = new MyData();
+                d.time = System.currentTimeMillis() + Long.parseLong(timeView.getText().toString()) * 1000;
+                d.repeat = repeatView.isChecked();
+                if (d.repeat) {
+                    d.interval = Long.parseLong(intervalView.getText().toString()) * 1000;
+                }
+                d.message = messageView.getText().toString();
+                DataManager.getInstance().addMyData(d);
+                startService(new Intent(MainActivity.this, MyService.class));
+            }
+        });
     }
+
 
     private void sendStyle() {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
